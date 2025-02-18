@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View Email</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-50">
+  <div class="min-h-screen">
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 shadow">
+      <div class="container mx-auto px-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Email View</h1>
+        <a href="/auto_mail/profile.html" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded transition-colors">
+          Back to Inbox
+        </a>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 id="subject" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+        <p><strong>From:</strong> <span id="from"></span></p>
+        <p><strong>To:</strong> <span id="to"></span></p>
+        <p><strong>Date:</strong> <span id="date"></span></p>
+        <hr class="my-4" />
+        <div id="emailBody" class="prose max-w-none"></div>
+        <h3 class="text-lg font-semibold mt-6">Attachments</h3>
+        <div id="attachments" class="mt-2"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Extract messageId from the URL query string (use "msgid" as key)
+    const urlParams = new URLSearchParams(window.location.search);
+    const messageId = urlParams.get('msgid');
+
+    // Retrieve stored auth info (make sure you've logged in and saved it in localStorage)
+    const authInfo = JSON.parse(localStorage.getItem('authInfo'));
+
+    if (!authInfo || !authInfo.access_token) {
+      alert('Please log in first');
+      window.location.href = '/auto_mail/index.html';
+    } else if (!messageId) {
+      alert('No message selected');
+    } else {
+      // Fetch email details from the API
+      fetch(`/auto_mail/api/view_email.php?messageId=${messageId}`, {
+        headers: { 'Authorization': `Bearer ${authInfo.access_token}` }
+      })
+      .then(response => response.json())
+      .then(email => {
+        document.getElementById('subject').textContent = email.subject;
+        document.getElementById('from').textContent = email.from;
+        document.getElementById('to').textContent = email.to;
+        document.getElementById('date').textContent = new Date(email.date).toLocaleString();
+        document.getElementById('emailBody').innerHTML = email.body;
+        
+        // Log whether the email status was updated to "read"
+        if (email.statusChanged) {
+          console.log("Email marked as read successfully.");
+        } else {
+          console.log("Email status was not updated.");
+        }
+      })
+      .catch(error => console.error('Error:', error));
+    }
+  </script>
+</body>
+</html>

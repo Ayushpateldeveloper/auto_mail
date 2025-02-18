@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>User Emails - Full Page Dashboard</title>
+  <!-- TailwindCSS via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    /* Make the table container scrollable if content is too tall */
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50">
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 shadow">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between">x
+        <h1 class="text-2xl font-bold">My Email Dashboard</h1>
+        <nav class="flex items-center space-x-4">
+          <a href="./department.php" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded transition-colors">
+            <span class="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" />
+              </svg>
+              Departments
+            </span>
+          </a>
+          <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded shadow transition-colors">
+            <span class="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V7.414l-5-5H3zM2 4a2 2 0 012-2h6.586A2 2 0 0112 2.586L17.414 8A2 2 0 0118 9.586V16a2 2 0 01-2 2H4a2 2 0 01-2-2V4zm10.707 3.707a1 1 0 00-1.414-1.414L9 8.586 7.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+              Logout
+            </span>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter Section (Keywords will appear here) -->
+  <div class="container mx-auto px-4 py-4">
+    <div class="flex flex-wrap items-center space-x-4">
+      <span class="text-gray-700 font-medium">Filter by keyword:</span>
+      <div id="keywordContainer" class="flex flex-wrap gap-2">
+        <!-- Keyword checkboxes will be loaded dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content with Sidebar Layout -->
+  <div class="container mx-auto px-4 flex gap-6">
+    <!-- Department Sidebar -->
+    <div class="w-64 flex-shrink-0">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold mb-4 text-gray-800">Departments</h2>
+        <div id="departmentList" class="space-y-2">
+          <!-- Departments will be loaded dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1">
+      <!-- Tabs Navigation -->
+      <div class="mb-4">
+        <div class="flex space-x-4">
+          <button id="tab-unread" class="px-4 py-2 bg-blue-500 text-white rounded shadow focus:outline-none">Unread Emails</button>
+          <button id="tab-read" class="px-4 py-2 bg-gray-300 text-gray-800 rounded shadow focus:outline-none">Read Emails</button>
+        </div>
+      </div>
+
+      <!-- Email Containers -->
+      <div id="unreadContainer" class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4 text-gray-800">Unread Emails</h2>
+        <div class="table-container">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">Date</th>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">From</th>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">To</th>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">Subject</th>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">Snippet</th>
+              </tr>
+            </thead>
+            <tbody id="unreadEmailTable" class="bg-white divide-y divide-gray-100">
+              <!-- Unread emails will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="readContainer" class="bg-white p-6 rounded shadow hidden mt-6">
+        <h2 class="text-xl font-bold mb-4 text-gray-800">Read Emails</h2>
+        <div class="table-container">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">Date</th>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">From</th>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">To</th>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">Subject</th>
+                <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">Snippet</th>
+              </tr>
+            </thead>
+            <tbody id="readEmailTable" class="bg-white divide-y divide-gray-100">
+              <!-- Read emails will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables for emails and pagination
+    let allEmailsGlobal = [];
+    let unreadEmailsGlobal = [];
+    let readEmailsGlobal = [];
+    let currentDepartment = null;
+    let nextPageToken = null;
+    let isLoading = false;
+    let hasMoreEmails = true;
+
+    // Helper function to format email date.
+    function formatEmailDate(dateString) {
+      const d = new Date(dateString);
+      if (isNaN(d)) return dateString;
+      const day = d.getDate().toString().padStart(2, '0');
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const month = monthNames[d.getMonth()];
+      const year = d.getFullYear();
+      const nowYear = new Date().getFullYear();
+      const hour = d.getHours().toString().padStart(2, '0');
+      const minute = d.getMinutes().toString().padStart(2, '0');
+      return year === nowYear ? `${day} ${month} ${hour}:${minute}` : `${day} ${month} ${year} ${hour}:${minute}`;
+    }
+
+    // Helper function to truncate snippet to first 12 words.
+    function truncateSnippet(snippet, maxWords = 12) {
+      const words = snippet.split(" ");
+      return words.length > maxWords ? words.slice(0, maxWords).join(" ") + "..." : snippet;
+    }
+
+    // Parse URL hash fragment for access token.
+    let params = {};
+    if (window.location.hash) {
+      const queryString = window.location.hash.substring(1);
+      let regex = /([^&=]+)=([^&]*)/g, m;
+      while (m = regex.exec(queryString)) {
+        params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+      }
+    }
+    if (Object.keys(params).length > 0) {
+      localStorage.setItem('authInfo', JSON.stringify(params));
+    }
+
+    // Determine if we're in development or production
+    const isLocalhost = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+    const basePath = isLocalhost ? "/" : "/auto_mail/";
+    
+    // Update the URL without changing the page
+    window.history.pushState({}, document.title, window.location.pathname);
+    
+    let authInfo = JSON.parse(localStorage.getItem('authInfo'));
+    if (!authInfo || !authInfo['access_token']) {
+      alert("Access token missing. Please sign in.");
+      window.location.href = basePath + "index.html";
+    }
+    const accessToken = authInfo['access_token'];
+
+    // Function to fetch details for a single email message
+    function fetchEmailDetails(messageId) {
+      return fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`, {
+        headers: { "Authorization": `Bearer ${accessToken}` }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Error fetching email details: " + response.status);
+          }
+          return response.json();
+        })
+        .then(emailData => {
+          let headers = emailData.payload.headers;
+          let emailDate = "", emailFrom = "", emailTo = "", emailSubject = "";
+          headers.forEach(header => {
+            if (header.name === "Date") emailDate = header.value;
+            if (header.name === "From") emailFrom = header.value;
+            if (header.name === "To") emailTo = header.value;
+            if (header.name === "Subject") emailSubject = header.value;
+          });
+          const internalDate = Number(emailData.internalDate);
+          let snippet = emailData.snippet || "";
+          snippet = truncateSnippet(snippet);
+          const isUnread = emailData.labelIds && emailData.labelIds.includes("UNREAD");
+          return { messageId, emailDate, emailFrom, emailTo, emailSubject, snippet, internalDate, isUnread };
+        });
+    }
+
+    // Function to fetch emails (optionally with a search query)
+    async function fetchEmailsByQuery(query = "", pageToken = null) {
+      if (isLoading) return;
+      isLoading = true;
+      try {
+        let url = "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20";
+        if (query) {
+          url += `&q=${encodeURIComponent(query)}`;
+        }
+        if (pageToken) {
+          url += `&pageToken=${pageToken}`;
+        }
+        const response = await fetch(url, {
+          headers: { "Authorization": `Bearer ${accessToken}` }
+        });
+        if (!response.ok) {
+          throw new Error("Error fetching emails: " + response.status);
+        }
+        const data = await response.json();
+        if (!data.messages) {
+          throw new Error("No messages in response.");
+        }
+        nextPageToken = data.nextPageToken;
+        hasMoreEmails = !!nextPageToken;
+        const emailPromises = data.messages.map(message => fetchEmailDetails(message.id));
+        const emailDetails = await Promise.all(emailPromises);
+        // Reset global arrays for filtered emails
+        allEmailsGlobal = [];
+        unreadEmailsGlobal = [];
+        readEmailsGlobal = [];
+        emailDetails.forEach(email => {
+          allEmailsGlobal.push(email);
+          if (email.isUnread) {
+            unreadEmailsGlobal.push(email);
+          } else {
+            readEmailsGlobal.push(email);
+          }
+        });
+        applyFilters();
+      } catch (error) {
+        console.error('Error fetching emails by query:', error);
+        alert("Error fetching emails: " + error.message);
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    // Standard fetchEmails function (no query) for initial load
+    async function fetchEmails(pageToken = null) {
+      await fetchEmailsByQuery("", pageToken);
+    }
+
+    // Intersection Observer for infinite scroll
+    function setupInfiniteScroll() {
+      const options = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      };
+      const callback = (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !isLoading && hasMoreEmails) {
+            // If keywords are selected, use the query; otherwise fetch all emails
+            const selectedKeywords = Array.from(document.querySelectorAll('#keywordContainer input:checked')).map(cb => cb.value);
+            let query = "";
+            if (selectedKeywords.length > 0) {
+              query = selectedKeywords.map(kw => `"${kw}"`).join(" OR ");
+            }
+            fetchEmailsByQuery(query, nextPageToken);
+          }
+        });
+      };
+      const observer = new IntersectionObserver(callback, options);
+      const unreadSentinel = document.createElement('tr');
+      unreadSentinel.id = 'unread-sentinel';
+      unreadSentinel.innerHTML = '<td colspan="5" class="py-4"></td>';
+      document.getElementById('unreadEmailTable').appendChild(unreadSentinel);
+      const readSentinel = document.createElement('tr');
+      readSentinel.id = 'read-sentinel';
+      readSentinel.innerHTML = '<td colspan="5" class="py-4"></td>';
+      document.getElementById('readEmailTable').appendChild(readSentinel);
+      observer.observe(unreadSentinel);
+      observer.observe(readSentinel);
+    }
+
+    // Modified renderEmails function to maintain sentinel elements
+    function renderEmails(emails, containerId) {
+      const tbody = document.getElementById(containerId);
+      const sentinel = tbody.lastElementChild;
+      tbody.innerHTML = '';
+      emails.sort((a, b) => b.internalDate - a.internalDate);
+      emails.forEach(email => {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50 cursor-pointer';
+        row.onclick = () => window.location.href = `/auto_mail/view_email.html?msgid=${email.messageId}`;
+        row.innerHTML = `
+          <td class="py-3 px-4 text-sm text-gray-900">${formatEmailDate(email.emailDate)}</td>
+          <td class="py-3 px-4 text-sm text-gray-900">${email.emailFrom}</td>
+          <td class="py-3 px-4 text-sm text-gray-900">${email.emailTo}</td>
+          <td class="py-3 px-4 text-sm text-gray-900">${email.emailSubject}</td>
+          <td class="py-3 px-4 text-sm text-gray-500">${email.snippet}</td>
+        `;
+        tbody.appendChild(row);
+      });
+      tbody.appendChild(sentinel);
+      if (hasMoreEmails) {
+        const loadingRow = document.createElement('tr');
+        loadingRow.className = 'loading-indicator';
+        loadingRow.innerHTML = `
+          <td colspan="5" class="py-4 text-center ${isLoading ? '' : 'hidden'}">
+            <div class="inline-flex items-center">
+              <svg class="animate-spin h-5 w-5 mr-3 text-blue-500" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Loading more emails...
+            </div>
+          </td>
+        `;
+        tbody.insertBefore(loadingRow, sentinel);
+      }
+    }
+
+    // Function to load departments from your API and display them vertically
+    async function loadDepartments() {
+      try {
+        const response = await fetch('/auto_mail/api/departments.php', {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const departments = await response.json();
+        const departmentList = document.getElementById('departmentList');
+        departmentList.innerHTML = `
+          <button class="w-full text-left px-4 py-2 rounded transition-colors ${currentDepartment === null ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}" onclick="selectDepartment(null)">
+            <div class="flex items-center justify-between">
+              <span>All Emails</span>
+            </div>
+          </button>
+        `;
+        departments.forEach(dept => {
+          const button = document.createElement('button');
+          button.className = `w-full text-left px-4 py-2 rounded transition-colors ${currentDepartment === dept.id ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}`;
+          button.onclick = () => selectDepartment(dept.id);
+          button.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span>${dept.name}</span>
+              ${dept.unread_count > 0 ? `<span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">${dept.unread_count}</span>` : ''}
+            </div>
+          `;
+          departmentList.appendChild(button);
+        });
+        console.log("Departments loaded successfully.");
+      } catch (error) {
+        console.error('Error loading departments:', error);
+        alert("Error loading departments: " + error.message);
+      }
+    }
+
+    // Function to load keywords for a department and display them as checkboxes
+    async function loadKeywords(deptId) {
+      try {
+        const response = await fetch(`/auto_mail/api/keywords.php?departmentId=${deptId}`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        if (!response.ok) {
+          throw new Error("Error fetching keywords: " + response.status);
+        }
+        const keywords = await response.json();
+        displayKeywords(keywords);
+        // After keywords load, automatically apply filter
+        applyKeywordFilter();
+      } catch (error) {
+        console.error('Error loading keywords:', error);
+        alert("Error loading keywords: " + error.message);
+      }
+    }
+
+    // Function to display keywords as checkboxes
+    function displayKeywords(keywords) {
+      const keywordContainer = document.getElementById('keywordContainer');
+      keywordContainer.innerHTML = "";
+      keywords.forEach(kwObj => {
+        // Assume each keyword object has a property "keyword"
+        const keyword = kwObj.keyword || kwObj;
+        const label = document.createElement('label');
+        label.className = "inline-flex items-center mr-4";
+        label.innerHTML = `
+          <input type="checkbox" class="keyword-filter" value="${keyword}" onchange="applyKeywordFilter()" />
+          <span class="ml-2">${keyword}</span>
+        `;
+        keywordContainer.appendChild(label);
+      });
+    }
+
+    // Function to apply keyword filter by calling Gmail API with a query built from selected keywords
+    function applyKeywordFilter() {
+      const selectedKeywords = Array.from(document.querySelectorAll('#keywordContainer input:checked')).map(cb => cb.value);
+      // Build a query string. Here we assume you want to search in the entire message (subject/body).
+      // Gmail supports queries like: "keyword1 OR keyword2"
+      let query = "";
+      if (selectedKeywords.length > 0) {
+        query = selectedKeywords.map(kw => `"${kw}"`).join(" OR ");
+      }
+      // Clear previously loaded emails
+      allEmailsGlobal = [];
+      unreadEmailsGlobal = [];
+      readEmailsGlobal = [];
+      // Fetch emails based on the query
+      fetchEmailsByQuery(query);
+    }
+
+    // Department selection: when a department is selected, load its keywords and apply filter.
+    function selectDepartment(deptId) {
+      currentDepartment = deptId;
+      loadDepartments(); // Refresh department list to update selection
+      if (deptId) {
+        loadKeywords(deptId);
+      } else {
+        // If "All Emails" selected, clear keywords and fetch all emails.
+        document.getElementById('keywordContainer').innerHTML = "";
+        allEmailsGlobal = [];
+        unreadEmailsGlobal = [];
+        readEmailsGlobal = [];
+        fetchEmails();
+      }
+    }
+
+    // For now, our applyFilters function just renders emails from the global arrays.
+    function applyFilters() {
+      renderEmails(unreadEmailsGlobal, 'unreadEmailTable');
+      renderEmails(readEmailsGlobal, 'readEmailTable');
+    }
+
+    // Tab switching logic
+    document.getElementById('tab-unread').addEventListener('click', function () {
+      this.classList.add('bg-blue-500', 'text-white');
+      this.classList.remove('bg-gray-300', 'text-gray-800');
+      document.getElementById('tab-read').classList.add('bg-gray-300', 'text-gray-800');
+      document.getElementById('tab-read').classList.remove('bg-blue-500', 'text-white');
+      document.getElementById('unreadContainer').classList.remove('hidden');
+      document.getElementById('readContainer').classList.add('hidden');
+    });
+
+    document.getElementById('tab-read').addEventListener('click', function () {
+      this.classList.add('bg-blue-500', 'text-white');
+      this.classList.remove('bg-gray-300', 'text-gray-800');
+      document.getElementById('tab-unread').classList.add('bg-gray-300', 'text-gray-800');
+      document.getElementById('tab-unread').classList.remove('bg-blue-500', 'text-white');
+      document.getElementById('readContainer').classList.remove('hidden');
+      document.getElementById('unreadContainer').classList.add('hidden');
+    });
+
+    // Logout function
+    function logout() {
+      fetch("https://oauth2.googleapis.com/revoke?token=" + accessToken, {
+        method: 'POST',
+        headers: { 'Content-type': 'application/x-www-form-urlencoded' }
+      })
+      .then(() => {
+        localStorage.removeItem('authInfo');
+        window.location.href = "/auto_mail/index.html";
+      })
+      .catch(err => console.error("Error during logout:", err));
+    }
+
+    // Function to fetch emails by query (used for keyword filtering)
+    async function fetchEmailsByQuery(query = "", pageToken = null) {
+      if (isLoading) return;
+      isLoading = true;
+      try {
+        let url = "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20";
+        if (query) {
+          url += `&q=${encodeURIComponent(query)}`;
+        }
+        if (pageToken) {
+          url += `&pageToken=${pageToken}`;
+        }
+        const response = await fetch(url, {
+          headers: { "Authorization": `Bearer ${accessToken}` }
+        });
+        if (!response.ok) {
+          throw new Error("Error fetching emails: " + response.status);
+        }
+        const data = await response.json();
+        if (!data.messages) {
+          throw new Error("No messages in response.");
+        }
+        nextPageToken = data.nextPageToken;
+        hasMoreEmails = !!nextPageToken;
+        const emailPromises = data.messages.map(message => fetchEmailDetails(message.id));
+        const emailDetails = await Promise.all(emailPromises);
+        emailDetails.forEach(email => {
+          allEmailsGlobal.push(email);
+          if (email.isUnread) {
+            unreadEmailsGlobal.push(email);
+          } else {
+            readEmailsGlobal.push(email);
+          }
+        });
+        applyFilters();
+      } catch (error) {
+        console.error('Error fetching emails by query:', error);
+        alert("Error fetching emails: " + error.message);
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    // Standard fetchEmails function (no query) for initial load
+    async function fetchEmails(pageToken = null) {
+      await fetchEmailsByQuery("", pageToken);
+    }
+
+    // Intersection Observer for infinite scroll
+    function setupInfiniteScroll() {
+      const options = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      };
+      const callback = (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !isLoading && hasMoreEmails) {
+            // If keywords are selected, use the query; otherwise fetch all emails
+            const selectedKeywords = Array.from(document.querySelectorAll('#keywordContainer input:checked')).map(cb => cb.value);
+            let query = "";
+            if (selectedKeywords.length > 0) {
+              query = selectedKeywords.map(kw => `"${kw}"`).join(" OR ");
+            }
+            fetchEmailsByQuery(query, nextPageToken);
+          }
+        });
+      };
+      const observer = new IntersectionObserver(callback, options);
+      const unreadSentinel = document.createElement('tr');
+      unreadSentinel.id = 'unread-sentinel';
+      unreadSentinel.innerHTML = '<td colspan="5" class="py-4"></td>';
+      document.getElementById('unreadEmailTable').appendChild(unreadSentinel);
+      const readSentinel = document.createElement('tr');
+      readSentinel.id = 'read-sentinel';
+      readSentinel.innerHTML = '<td colspan="5" class="py-4"></td>';
+      document.getElementById('readEmailTable').appendChild(readSentinel);
+      observer.observe(unreadSentinel);
+      observer.observe(readSentinel);
+    }
+
+    // Initialize email loading, infinite scroll, and departments when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDepartments();
+      fetchEmails(); // Initial load of emails (all emails)
+      setupInfiniteScroll();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smoothed Polyline View</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div class="max-w-4xl mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-4">Smoothed Polyline View</h1>
+    <div id="map"></div>
+  </div>
+  
+  <script>
+    function rdp(points, epsilon) {
+      if (points.length < 3) return points;
+
+      let dmax = 0;
+      let index = 0;
+      const start = points[0];
+      const end = points[points.length - 1];
+      
+      function perpendicularDistance(point, lineStart, lineEnd) {
+        const num = Math.abs(
+          (lineEnd.lng - lineStart.lng) * (lineStart.lat - point.lat) -
+          (lineStart.lng - point.lng) * (lineEnd.lat - lineStart.lat)
+        );
+        const den = Math.sqrt(
+          Math.pow(lineEnd.lng - lineStart.lng, 2) +
+          Math.pow(lineEnd.lat - lineStart.lat, 2)
+        );
+        return num / den;
+      }
+
+      for (let i = 1; i < points.length - 1; i++) {
+        const d = perpendicularDistance(points[i], start, end);
+        if (d > dmax) {
+          index = i;
+          dmax = d;
+        }
+      }
+      
+      if (dmax > epsilon) {
+        const left = rdp(points.slice(0, index + 1), epsilon);
+        const right = rdp(points.slice(index), epsilon);
+        return [...left.slice(0, -1), ...right];
+      } else {
+        return [start, end];
+      }
+    }
+
+    function initMap() {
+      const rawCoordinates = [
+        { lat: 22.3165801, lng: 73.1746137 },
+        { lat: 22.3165754, lng: 73.1746104 },
+        { lat: 22.3165628, lng: 73.1746029 },
+        { lat: 22.3165561, lng: 73.1744984 },
+        { lat: 22.3165458, lng: 73.1744726 },
+        { lat: 22.3165368, lng: 73.1744507 },
+        { lat: 22.3165252, lng: 73.174436 },
+        { lat: 22.3165437, lng: 73.174508 },
+        { lat: 22.3165483, lng: 73.1745289 },
+        { lat: 22.3165491, lng: 73.1745368 },
+        { lat: 22.3165236, lng: 73.1744641 },
+        { lat: 22.3165232, lng: 73.1744535 },
+        { lat: 22.316525, lng: 73.174452 },
+        { lat: 22.3165237, lng: 73.1744506 },
+        { lat: 22.3165252, lng: 73.1744522 },
+        { lat: 22.3165274, lng: 73.1744617 },
+        { lat: 22.3165275, lng: 73.1744623 },
+        { lat: 22.3165285, lng: 73.1744645 },
+        { lat: 22.3165287, lng: 73.1744679 },
+        { lat: 22.3165282, lng: 73.1744729 },
+        { lat: 22.3165274, lng: 73.1744733 },
+        { lat: 22.316527, lng: 73.1744734 },
+        { lat: 22.3165268, lng: 73.1744719 },
+        { lat: 22.3165326, lng: 73.1744913 },
+        { lat: 22.3165357, lng: 73.1745005 },
+        { lat: 22.3165377, lng: 73.1745076 },
+        { lat: 22.3165388, lng: 73.1745105 },
+        { lat: 22.31654, lng: 73.1745126 },
+        { lat: 22.3165418, lng: 73.1745155 },
+        { lat: 22.3165448, lng: 73.1745196 },
+        { lat: 22.3165465, lng: 73.1745219 },
+        { lat: 22.3165504, lng: 73.1745231 },
+        { lat: 22.3165533, lng: 73.1745259 },
+        { lat: 22.3165546, lng: 73.1745271 },
+        { lat: 22.3165577, lng: 73.1745288 },
+        { lat: 22.3165623, lng: 73.1745261 },
+        { lat: 22.3165644, lng: 73.1745528 },
+        { lat: 22.3165651, lng: 73.1745617 },
+        { lat: 22.3165649, lng: 73.174564 },
+        { lat: 22.3165651, lng: 73.1745653 },
+        { lat: 22.3165655, lng: 73.1745657 },
+        { lat: 22.3165656, lng: 73.1745661 },
+        { lat: 22.3165654, lng: 73.1745802 },
+        { lat: 22.3165654, lng: 73.1745873 },
+        { lat: 22.3165673, lng: 73.1745874 },
+        { lat: 22.316569, lng: 73.1745856 },
+        { lat: 22.3165759, lng: 73.1745683 },
+        { lat: 22.3165856, lng: 73.1745405 },
+        { lat: 22.3165899, lng: 73.1745274 },
+        { lat: 22.3165931, lng: 73.1745141 },
+        { lat: 22.3165951, lng: 73.1745044 },
+        { lat: 22.3165959, lng: 73.1745 },
+        { lat: 22.3165994, lng: 73.1744906 },
+        { lat: 22.3165999, lng: 73.1744878 },
+        { lat: 22.316602, lng: 73.1744791 },
+        { lat: 22.3166019, lng: 73.1744777 },
+        { lat: 22.3166051, lng: 73.174473 },
+        { lat: 22.3166064, lng: 73.1744657 },
+        { lat: 22.3166046, lng: 73.1744557 },
+        { lat: 22.3166012, lng: 73.17445 },
+        { lat: 22.3165967, lng: 73.1744435 },
+        { lat: 22.3165918, lng: 73.1744388 },
+        { lat: 22.316584, lng: 73.1744529 },
+        { lat: 22.3165793, lng: 73.1744537 },
+        { lat: 22.3165759, lng: 73.1744545 },
+        { lat: 22.3165744, lng: 73.1744515 },
+        { lat: 22.3165668, lng: 73.1744494 },
+        { lat: 22.3165628, lng: 73.1744456 },
+        { lat: 22.3165581, lng: 73.1744458 },
+        { lat: 22.3165552, lng: 73.1744457 },
+        { lat: 22.3165543, lng: 73.174446 },
+        { lat: 22.3165527, lng: 73.1744479 },
+        { lat: 22.3165514, lng: 73.1744662 },
+        { lat: 22.31655, lng: 73.174471 },
+        { lat: 22.3165515, lng: 73.1744716 },
+        { lat: 22.316552, lng: 73.1744747 },
+        { lat: 22.3165555, lng: 73.174472 },
+        { lat: 22.3165582, lng: 73.1744738 },
+        { lat: 22.3165652, lng: 73.1744682 },
+        { lat: 22.316567, lng: 73.174468 },
+        { lat: 22.3165683, lng: 73.1744682 },
+        { lat: 22.316573, lng: 73.1744822 },
+        { lat: 22.3165739, lng: 73.174479 },
+        { lat: 22.3165742, lng: 73.1744787 },
+        { lat: 22.3165775, lng: 73.1744772 },
+        { lat: 22.3165789, lng: 73.1744757 },
+        { lat: 22.3165756, lng: 73.1744751 },
+        { lat: 22.3165841, lng: 73.1744809 },
+        { lat: 22.3165828, lng: 73.1744793 },
+        { lat: 22.3165875, lng: 73.1744824 },
+        { lat: 22.3165908, lng: 73.1744875 },
+        { lat: 22.3165898, lng: 73.1744929 },
+        { lat: 22.3165906, lng: 73.1745038 },
+        { lat: 22.3165884, lng: 73.1745118 },
+        { lat: 22.316584, lng: 73.1745155 },
+        { lat: 22.3165824, lng: 73.1745145 },
+        { lat: 22.3165822, lng: 73.1745133 }
+      ];
+      
+      const smoothedCoordinates = rdp(rawCoordinates, 0.00002);
+      
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: rawCoordinates[0],
+        zoom: 18
+      });
+      
+      const path = new google.maps.Polyline({
+        path: smoothedCoordinates,
+        geodesic: true,
+        strokeColor: "#0000FF",
+        strokeOpacity: 1.0,
+        strokeWeight: 4
+      });
+      path.setMap(map);
+      
+      new google.maps.Marker({
+        position: rawCoordinates[0],
+        map: map,
+        title: "Start",
+        icon: "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+      });
+      
+      new google.maps.Marker({
+        position: rawCoordinates[rawCoordinates.length - 1],
+        map: map,
+        title: "End",
+        icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+      });
+    }
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDR04EqkYpKeoc-7LM39ILGSa63OGen7jQ&callback=initMap&libraries=geometry"></script>
+</body>
+</html>

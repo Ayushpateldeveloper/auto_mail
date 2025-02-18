@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OAuth 2 Sign-In</title>
+  <!-- TailwindCSS via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center min-h-screen">
+  <div class="bg-white rounded-lg shadow-lg p-10 max-w-md w-full text-center">
+    <h1 class="text-3xl font-bold mb-4 text-gray-800">OAuth 2 Sign-In</h1>
+    <p class="text-gray-600 mb-8">Sign in with your Google account to continue</p>
+    <button onclick="signIn()" class="w-full bg-bluez-900 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded focus:outline-none focus:shadow-outline transition-colors">
+      <svg class="inline-block h-6 w-6 mr-2" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.75 1.22 9.25 3.2l6.78-6.78C35.16 3.84 30.28 2 24 2 14.87 2 6.98 6.43 2.64 13.1l7.84 6.1C12.5 12.29 17.59 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.48 24.5c0-1.62-.15-2.82-.45-4.06H24v7.67h12.86c-.55 2.96-2.21 6.1-5.14 8.01l7.87 6.1c4.58-4.22 7.23-10.44 7.23-17.82z"/>
+        <path fill="#FBBC05" d="M10.48 28.64a13.96 13.96 0 0 1 0-8.28l-7.84-6.1A23.97 23.97 0 0 0 2 24c0 3.87.93 7.53 2.64 10.74l7.84-6.1C12.5 24.5 9.5 22.67 9.5 20.5z"/>
+        <path fill="#34A853" d="M24 46c6.28 0 11.57-2.07 15.43-5.62l-7.87-6.1c-2.19 1.47-5 2.34-7.56 2.34-5.82 0-10.76-3.93-12.54-9.26l-7.84 6.1C6.98 41.57 14.87 46 24 46z"/>
+        <path fill="none" d="M2 2h44v44H2z"/>
+      </svg>
+      Sign In with Google
+    </button>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

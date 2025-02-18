@@ -1,0 +1,25 @@
+[18-Feb-2025 12:31:24 Europe/Berlin] PHP Warning:  require_once(../db_connect.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\auto_mail\api\view_email.php on line 55
+[18-Feb-2025 12:31:24 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required '../db_connect.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\auto_mail\api\view_email.php:55
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\auto_mail\api\view_email.php on line 55
+[18-Feb-2025 12:38:10 Europe/Berlin] PHP Warning:  require_once(../db_connect.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\auto_mail\api\view_email.php on line 84
+[18-Feb-2025 12:38:10 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required '../db_connect.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\auto_mail\api\view_email.php:84
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\auto_mail\api\view_email.php on line 84
+[18-Feb-2025 12:38:52 Europe/Berlin] PHP Warning:  require_once(../db_connect.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\auto_mail\api\view_email.php on line 84
+[18-Feb-2025 12:38:52 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required '../db_connect.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\auto_mail\api\view_email.php:84
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\auto_mail\api\view_email.php on line 84
+[18-Feb-2025 12:38:59 Europe/Berlin] PHP Warning:  require_once(../db_connect.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\auto_mail\api\view_email.php on line 84
+[18-Feb-2025 12:38:59 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required '../db_connect.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\auto_mail\api\view_email.php:84
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\auto_mail\api\view_email.php on line 84
+[18-Feb-2025 12:39:05 Europe/Berlin] PHP Warning:  require_once(../db_connect.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\auto_mail\api\view_email.php on line 84
+[18-Feb-2025 12:39:05 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required '../db_connect.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\auto_mail\api\view_email.php:84
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\auto_mail\api\view_email.php on line 84

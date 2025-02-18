@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Email Detail</title>
+  <!-- TailwindCSS via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <style>
+    /* Custom styling for email content */
+    .email-body {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-white shadow border-b">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <button onclick="goBack()" class="flex items-center space-x-2 text-blue-600 hover:text-blue-800 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span class="font-medium text-sm">Back</span>
+      </button>
+      <h1 class="text-base font-semibold text-gray-800">Mail Detail</h1>
+      <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold py-1 px-3 rounded focus:outline-none">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto flex-grow px-4 py-6">
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 id="subject" class="text-xl font-bold mb-2 text-gray-800"></h2>
+      <div class="mb-2 text-gray-600 text-sm">
+        <p id="from"></p>
+        <p id="to"></p>
+        <p id="date"></p>
+      </div>
+      <hr class="mb-2">
+      <div id="body" class="email-body text-gray-800 text-sm"></div>
+    </div>
+  </main>
+
+  <script>
+    // Utility: Parse query parameters from URL
+    function getQueryParams() {
+      let params = {};
+      const qs = window.location.search.substring(1);
+      const pairs = qs.split("&");
+      for (const pair of pairs) {
+        const [k, v] = pair.split("=");
+        params[decodeURIComponent(k)] = decodeURIComponent(v || "");
+      }
+      return params;
+    }
+    
+    // Get the message ID from query parameters.
+    const { msgid } = getQueryParams();
+    if (!msgid) {
+      alert("No message ID provided.");
+      window.location.href = "profile.html";
+    }
+    
+    // Retrieve access token from localStorage
+    const authInfo = JSON.parse(localStorage.getItem("authInfo"));
+    if (!authInfo || !authInfo.access_token) {
+      alert("Access token missing. Please sign in.");
+      window.location.href = "index.html";
+    }
+    const accessToken = authInfo.access_token;
+    
+    // Helper: decode base64 (URL-safe) to a UTF-8 string using TextDecoder.
+    function decodeBase64Url(str) {
+      const replaced = str.replace(/-/g, "+").replace(/_/g, "/");
+      const pad = replaced.length % 4;
+      let base64 = replaced;
+      if (pad) {
+        base64 += "=".repeat(4 - pad);
+      }
+      const binaryString = window.atob(base64);
+      const bytes = new Uint8Array([...binaryString].map(ch => ch.charCodeAt(0)));
+      return new TextDecoder("utf-8").decode(bytes);
+    }
+    
+    // Fetch the message with format=full.
+    fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgid}?format=full`, {
+      headers: { "Authorization": `Bearer ${accessToken}` },
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error.message || "Error loading email");
+        
+        let subject = "", from = "", to = "", dateStr = "";
+        data.payload.headers.forEach(header => {
+          if (header.name === "Subject") subject = header.value;
+          if (header.name === "From") from = header.value;
+          if (header.name === "To") to = header.value;
+          if (header.name === "Date") dateStr = header.value;
+        });
+        
+        document.getElementById("subject").innerText = subject;
+        document.getElementById("from").innerText = "From: " + from;
+        document.getElementById("to").innerText = "To: " + to;
+        document.getElementById("date").innerText = "Date: " + dateStr;
+        
+        // Function to recursively find a text/html part.
+        function findHtmlPart(payload) {
+          if (!payload) return null;
+          if (payload.mimeType === "text/html" && payload.body && payload.body.data) {
+            return payload;
+          }
+          if (payload.parts) {
+            for (const part of payload.parts) {
+              const found = findHtmlPart(part);
+              if (found) return found;
+            }
+          }
+          return null;
+        }
+        
+        const htmlPart = findHtmlPart(data.payload);
+        const emailBodyEl = document.getElementById("body");
+        if (htmlPart) {
+          const rawHtml = decodeBase64Url(htmlPart.body.data);
+          // *Security Note:* In production, sanitize rawHtml before injecting it.
+          emailBodyEl.innerHTML = rawHtml;
+        } else {
+          emailBodyEl.innerText = data.snippet || "No HTML body or snippet available.";
+        }
+        
+        // Mark the email as read by removing the UNREAD label if present.
+        if (data.labelIds && data.labelIds.includes("UNREAD")) {
+          fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgid}/modify`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ removeLabelIds: ["UNREAD"] })
+          })
+          .then(res => res.json())
+          .then(result => {
+            console.log("Email marked as read:", result);
+          })
+          .catch(err => console.error("Error marking as read:", err));
+        }
+      })
+      .catch(err => {
+        console.error("Error fetching email details:", err);
+        document.querySelector(".email-container").innerHTML =
+          `<p class='text-red-500'>${err.message}</p>`;
+      });
+    
+    function goBack() {
+      if (document.referrer) {
+        window.history.back();
+      } else {
+        window.location.href = "profile.html";
+      }
+    }
+    
+    function logout() {
+      fetch("https://oauth2.googleapis.com/revoke?token=" + accessToken, {
+        method: 'POST',
+        headers: { 'Content-type': 'application/x-www-form-urlencoded' }
+      })
+        .then(() => {
+          localStorage.removeItem('authInfo');
+          location.href = "index.html";
+        })
+        .catch(err => console.error("Error during logout:", err));
+    }
+  </script>
+</body>
+</html>

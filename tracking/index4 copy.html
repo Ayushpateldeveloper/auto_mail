@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Location Tracking by User</title>
+  <!-- TailwindCSS via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- jQuery via CDN -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-3xl font-bold mb-4">Live Location Tracking</h1>
+    <div id="userInfo" class="mb-4 text-lg text-gray-700"></div>
+    <div class="flex space-x-4 mb-4">
+      <button id="startTracking" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+        Start Tracking
+      </button>
+      <button id="stopTracking" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" disabled>
+        Stop Tracking
+      </button>
+    </div>
+    <p id="status" class="mb-4 text-lg text-blue-600"></p>
+    <!-- Table for showing stored locations -->
+    <table class="min-w-full border-collapse border border-gray-300">
+      <thead>
+        <tr>
+          <th class="border border-gray-300 p-2">Timestamp</th>
+          <th class="border border-gray-300 p-2">Latitude</th>
+          <th class="border border-gray-300 p-2">Longitude</th>
+        </tr>
+      </thead>
+      <tbody id="locationTable">
+        <!-- New location rows will be appended here -->
+      </tbody>
+    </table>
+  </div>
+  
+  <script>
+    let watchID = null;
+    let userID = localStorage.getItem("user_id");
+
+    // Ask for user ID if not provided
+    if (!userID) {
+      userID = prompt("Please enter your user ID:");
+      if (userID && userID.trim().length > 0) {
+        localStorage.setItem("user_id", userID.trim());
+      } else {
+        alert("A valid user ID is required.");
+        // Reload page to ask again
+        location.reload();
+      }
+    }
+    // Display the current user ID on the page
+    $("#userInfo").text("Logged in as User: " + userID);
+
+    // Function to start live tracking
+    function startTracking() {
+      if (navigator.geolocation) {
+        watchID = navigator.geolocation.watchPosition(
+          function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const timestamp = new Date().toLocaleString();
+            
+            $("#status").text("Location updated at " + timestamp);
+            
+            // Append new row in the table
+            const newRow = `<tr>
+              <td class="border border-gray-300 p-2">${timestamp}</td>
+              <td class="border border-gray-300 p-2">${lat}</td>
+              <td class="border border-gray-300 p-2">${lng}</td>
+            </tr>`;
+            $("#locationTable").append(newRow);
+            
+            // Send the location data along with user ID to the server via AJAX
+            $.ajax({
+              url: "update_location.php",
+              type: "POST",
+              data: { 
+                user_id: userID, 
+                latitude: lat, 
+                longitude: lng 
+              },
+              success: function(response) {
+                console.log("Location saved: " + response);
+              },
+              error: function(xhr, status, error) {
+                console.error("Error updating location: " + error);
+              }
+            });
+          },
+          function(error) {
+            $("#status").text("Error getting location: " + error.message);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 1000,
+            timeout: 5000
+          }
+        );
+      } else {
+        $("#status").text("Geolocation is not supported by your browser.");
+      }
+    }
+
+    // Function to stop tracking
+    function stopTracking() {
+      if (watchID !== null) {
+        navigator.geolocation.clearWatch(watchID);
+        watchID = null;
+        $("#status").text("Tracking stopped.");
+      }
+    }
+
+    // Button click handlers
+    $("#startTracking").click(function(){
+      startTracking();
+      $(this).attr("disabled", true);
+      $("#stopTracking").attr("disabled", false);
+    });
+    $("#stopTracking").click(function(){
+      stopTracking();
+      $(this).attr("disabled", true);
+      $("#startTracking").attr("disabled", false);
+    });
+    
+    // Function to load stored locations for the current user
+    function loadLocations() {
+      $.ajax({
+        url: "get_locations.php",
+        type: "GET",
+        data: { user_id: userID },
+        dataType: "json",
+        success: function(data) {
+          let tableHTML = "";
+          data.forEach(function(loc) {
+            tableHTML += `<tr>
+              <td class="border border-gray-300 p-2">${loc.created_at}</td>
+              <td class="border border-gray-300 p-2">${loc.latitude}</td>
+              <td class="border border-gray-300 p-2">${loc.longitude}</td>
+            </tr>`;
+          });
+          $("#locationTable").html(tableHTML);
+        },
+        error: function(xhr, status, error) {
+          console.error("Error loading locations: " + error);
+        }
+      });
+    }
+
+    // Load stored locations every 5 seconds
+    setInterval(loadLocations, 5000);
+    // Also load on initial page load
+    loadLocations();
+  </script>
+</body>
+</html>

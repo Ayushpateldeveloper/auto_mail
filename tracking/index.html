@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Route Finder</title>
+  <!-- TailwindCSS via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- jQuery via CDN -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    /* Set the map height */
+    #map {
+      height: 500px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">Route Finder</h1>
+    
+    <!-- Input Fields -->
+    <div class="mb-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+      <input id="origin" class="border p-2 flex-1" placeholder="Enter origin">
+      <input id="destination" class="border p-2 flex-1" placeholder="Enter destination">
+      <button id="getRoute" class="bg-blue-500 text-white p-2 rounded">Get Route</button>
+    </div>
+    
+    <!-- Map Display -->
+    <div id="map" class="mb-4"></div>
+    
+    <!-- Directions Panel -->
+    <div id="directionsPanel" class="border p-4 bg-white"></div>
+  </div>
+  
+  <script>
+    let map, directionsService, directionsRenderer;
+    
+    // Initialize the Google Map and Directions services
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 28.6139, lng: 77.2090 }, // Default center (New Delhi)
+        zoom: 7
+      });
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer();
+      directionsRenderer.setMap(map);
+      directionsRenderer.setPanel(document.getElementById("directionsPanel"));
+    }
+    
+    // When the "Get Route" button is clicked, compute the route
+    $("#getRoute").click(function(){
+      const origin = $("#origin").val();
+      const destination = $("#destination").val();
+      if (!origin || !destination) {
+        alert("Please enter both origin and destination.");
+        return;
+      }
+      
+      const request = {
+        origin: origin,
+        destination: destination,
+        travelMode: google.maps.TravelMode.DRIVING // Change as needed (WALKING, BICYCLING, TRANSIT)
+      };
+      
+      directionsService.route(request, function(result, status){
+        if (status === google.maps.DirectionsStatus.OK) {
+          directionsRenderer.setDirections(result);
+        } else {
+          alert("Could not get directions: " + status);
+        }
+      });
+    });
+  </script>
+  <!-- Load the Google Maps JavaScript API with your API key -->
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDR04EqkYpKeoc-7LM39ILGSa63OGen7jQ&callback=initMap"></script>
+</body>
+</html>
