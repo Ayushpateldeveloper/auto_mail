@@ -1,104 +1,104 @@
 <?php
 require_once 'includes/dbcon.php';
-
+include 'includes/header.php';
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['action'])) {
-        switch ($_POST['action']) {
-            case 'add_department':
-                $name = $_POST['name'];
-                $sql = "INSERT INTO departments (name) VALUES ('$name')";
-                $stmt = sqlsrv_query($conn, $sql);
-                if ($stmt === false) {
-                    die(print_r(sqlsrv_errors(), true));
-                }
-                break;
-
-            case 'edit_department':
-                $id = (int) $_POST['id'];
-                $name = $_POST['name'];
-                $sql = "UPDATE departments SET name='$name' WHERE id=$id";
-                $stmt = sqlsrv_query($conn, $sql);
-                if ($stmt === false) {
-                    die(print_r(sqlsrv_errors(), true));
-                }
-                break;
-
-            case 'delete_department':
-                $id = (int) $_POST['id'];
-                $sql = "DELETE FROM departments WHERE id=$id";
-                $stmt = sqlsrv_query($conn, $sql);
-                if ($stmt === false) {
-                    die(print_r(sqlsrv_errors(), true));
-                }
-                break;
-
-            case 'add_keyword':
-                if (isset($_POST['keywords'])) {
-                    foreach ($_POST['keywords'] as $keyword) {
-                        $department_id = (int) $_POST['department_id'];
-                        $sql = "INSERT INTO keywords (keyword, department_id) VALUES ('$keyword', $department_id)";
-                        $stmt = sqlsrv_query($conn, $sql);
-                        if ($stmt === false) {
-                            die(print_r(sqlsrv_errors(), true));
-                        }
-                    }
-                }
-                break;
-
-            case 'delete_keyword':
-                $id = (int) $_POST['id'];
-                $sql = "DELETE FROM keywords WHERE id=$id";
-                $stmt = sqlsrv_query($conn, $sql);
-                if ($stmt === false) {
-                    die(print_r(sqlsrv_errors(), true));
-                }
-                break;
-
-            case 'edit_keyword':
-                $id = (int) $_POST['keyword_id'];
-                $keyword = $_POST['keyword'];
-                $sql = "UPDATE keywords SET keyword='$keyword' WHERE id=$id";
-                $stmt = sqlsrv_query($conn, $sql);
-                if ($stmt === false) {
-                    die(print_r(sqlsrv_errors(), true));
-                }
-                break;
-
-            // New action: Edit aggregated keywords for a department
-            case 'edit_department_keywords':
-                $dept_id = (int) $_POST['department_id'];
-                $keywords_str = $_POST['keywords'];  // comma-separated string
-                // Delete existing keywords for this department
-                $sql = "DELETE FROM keywords WHERE department_id = $dept_id";
-                $stmt = sqlsrv_query($conn, $sql);
-                if ($stmt === false) {
-                    die(print_r(sqlsrv_errors(), true));
-                }
-                // Insert new keywords (if any)
-                $keywords_array = array_filter(array_map('trim', explode(',', $keywords_str)));
-                foreach ($keywords_array as $kw) {
-                    $sql = "INSERT INTO keywords (keyword, department_id) VALUES ('$kw', $dept_id)";
-                    $stmt = sqlsrv_query($conn, $sql);
-                    if ($stmt === false) {
-                        die(print_r(sqlsrv_errors(), true));
-                    }
-                }
-                break;
-
-            // New action: Delete all keywords for a department
-            case 'delete_department_keywords':
-                $dept_id = (int) $_POST['department_id'];
-                $sql = "DELETE FROM keywords WHERE department_id = $dept_id";
-                $stmt = sqlsrv_query($conn, $sql);
-                if ($stmt === false) {
-                    die(print_r(sqlsrv_errors(), true));
-                }
-                break;
+  if (isset($_POST['action'])) {
+    switch ($_POST['action']) {
+      case 'add_department':
+        $name = $_POST['name'];
+        $sql = "INSERT INTO departments (name) VALUES ('$name')";
+        $stmt = sqlsrv_query($conn, $sql);
+        if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
         }
-        header('Location: department.php');
-        exit();
+        break;
+
+      case 'edit_department':
+        $id = (int) $_POST['id'];
+        $name = $_POST['name'];
+        $sql = "UPDATE departments SET name='$name' WHERE id=$id";
+        $stmt = sqlsrv_query($conn, $sql);
+        if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
+        }
+        break;
+
+      case 'delete_department':
+        $id = (int) $_POST['id'];
+        $sql = "DELETE FROM departments WHERE id=$id";
+        $stmt = sqlsrv_query($conn, $sql);
+        if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
+        }
+        break;
+
+      case 'add_keyword':
+        if (isset($_POST['keywords'])) {
+          foreach ($_POST['keywords'] as $keyword) {
+            $department_id = (int) $_POST['department_id'];
+            $sql = "INSERT INTO keywords (keyword, department_id) VALUES ('$keyword', $department_id)";
+            $stmt = sqlsrv_query($conn, $sql);
+            if ($stmt === false) {
+              die(print_r(sqlsrv_errors(), true));
+            }
+          }
+        }
+        break;
+
+      case 'delete_keyword':
+        $id = (int) $_POST['id'];
+        $sql = "DELETE FROM keywords WHERE id=$id";
+        $stmt = sqlsrv_query($conn, $sql);
+        if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
+        }
+        break;
+
+      case 'edit_keyword':
+        $id = (int) $_POST['keyword_id'];
+        $keyword = $_POST['keyword'];
+        $sql = "UPDATE keywords SET keyword='$keyword' WHERE id=$id";
+        $stmt = sqlsrv_query($conn, $sql);
+        if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
+        }
+        break;
+
+      // New action: Edit aggregated keywords for a department
+      case 'edit_department_keywords':
+        $dept_id = (int) $_POST['department_id'];
+        $keywords_str = $_POST['keywords'];  // comma-separated string
+        // Delete existing keywords for this department
+        $sql = "DELETE FROM keywords WHERE department_id = $dept_id";
+        $stmt = sqlsrv_query($conn, $sql);
+        if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
+        }
+        // Insert new keywords (if any)
+        $keywords_array = array_filter(array_map('trim', explode(',', $keywords_str)));
+        foreach ($keywords_array as $kw) {
+          $sql = "INSERT INTO keywords (keyword, department_id) VALUES ('$kw', $dept_id)";
+          $stmt = sqlsrv_query($conn, $sql);
+          if ($stmt === false) {
+            die(print_r(sqlsrv_errors(), true));
+          }
+        }
+        break;
+
+      // New action: Delete all keywords for a department
+      case 'delete_department_keywords':
+        $dept_id = (int) $_POST['department_id'];
+        $sql = "DELETE FROM keywords WHERE department_id = $dept_id";
+        $stmt = sqlsrv_query($conn, $sql);
+        if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
+        }
+        break;
     }
+    header('Location: department.php');
+    exit();
+  }
 }
 
 // (Optional) Create tables if they do not exist
@@ -128,22 +128,22 @@ sqlsrv_query($conn, $sql);
 $sql = 'SELECT * FROM departments ORDER BY name';
 $stmt = sqlsrv_query($conn, $sql);
 if ($stmt === false) {
-    die(print_r(sqlsrv_errors(), true));
+  die(print_r(sqlsrv_errors(), true));
 }
 $departments = [];
 while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
-    $departments[] = $row;
+  $departments[] = $row;
 }
 
 // Fetch keywords for detailed display (each keyword row)
 $sql = 'SELECT k.*, d.name as department_name FROM keywords k LEFT JOIN departments d ON k.department_id = d.id ORDER BY d.name, k.keyword';
 $stmt = sqlsrv_query($conn, $sql);
 if ($stmt === false) {
-    die(print_r(sqlsrv_errors(), true));
+  die(print_r(sqlsrv_errors(), true));
 }
 $keywords = [];
 while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
-    $keywords[] = $row;
+  $keywords[] = $row;
 }
 
 // Fetch aggregated keywords by department for display (only departments with keywords)
@@ -157,11 +157,11 @@ $sql = "SELECT d.id, d.name AS department_name,
         ORDER BY d.name";
 $stmt = sqlsrv_query($conn, $sql);
 if ($stmt === false) {
-    die(print_r(sqlsrv_errors(), true));
+  die(print_r(sqlsrv_errors(), true));
 }
 $aggregatedKeywords = [];
 while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
-    $aggregatedKeywords[] = $row;
+  $aggregatedKeywords[] = $row;
 }
 ?>
 <!DOCTYPE html>
@@ -174,21 +174,7 @@ while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
-  <!-- Header -->
-  <header class="bg-white shadow">
-    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-      <div class="flex items-center space-x-4">
-        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
-          <i class="fas fa-layer-group text-xl"></i>
-        </div>
-        <h1 class="text-3xl font-bold text-gray-800">Department Management</h1>
-      </div>
-      <a href="./profile.html" class="bg-blue-600 text-white px-5 py-2 rounded shadow hover:bg-blue-700 transition">
-        <i class="fas fa-arrow-left mr-2"></i>
-        Back to Dashboard
-      </a>
-    </div>
-  </header>
+
 
   <div class="container mx-auto px-6 py-8 space-y-8">
     <!-- Top Section: Two Side-by-Side Cards -->
@@ -244,8 +230,8 @@ while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
               <td class="px-6 py-4 whitespace-nowrap text-gray-500">
                 <?php
                 $created = is_object($dept['created_at'])
-                    ? $dept['created_at']->format('M d, Y H:i')
-                    : date('M d, Y H:i', strtotime($dept['created_at']));
+                  ? $dept['created_at']->format('M d, Y H:i')
+                  : date('M d, Y H:i', strtotime($dept['created_at']));
                 echo htmlspecialchars($created);
                 ?>
               </td>

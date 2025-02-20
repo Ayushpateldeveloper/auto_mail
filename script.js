@@ -7,8 +7,8 @@ function signIn() {
   // Determine if we're in development or production
   const isLocalhost = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
   const redirectUri = isLocalhost 
-    ? "http://127.0.0.1:5500/profile.html"
-    : "https://deaa-2405-201-2013-3d57-e171-2476-eff1-439a.ngrok-free.app/auto_mail/profile.html";
+    ? "http://127.0.0.1:5500/profile.php"
+    : "https://30f3-27-54-172-62.ngrok-free.app/auto_mail/profile.php";
 
   let params = {
     client_id: "109168551440-t1741kigc8090155t5smmmmemb5o8crd.apps.googleusercontent.com",
@@ -28,4 +28,28 @@ function signIn() {
   }
   document.body.appendChild(form);
   form.submit();
+}
+
+// Assuming 'token' is the variable holding the received access token
+function handleToken(token) {
+  $.ajax({
+    url: 'store_token.php',
+    type: 'POST',
+    data: { access_token: token },
+    success: function(response) {
+      console.log(response); // Handle success response
+    },
+    error: function(xhr, status, error) {
+      console.error('Error storing token:', error); // Handle error
+    }
+  });
+}
+
+// Assuming the token is received in the URL hash
+window.onload = function() {
+  const urlParams = new URLSearchParams(window.location.hash.substring(1));
+  const token = urlParams.get('access_token');
+  if (token) {
+    handleToken(token);
+  }
 }

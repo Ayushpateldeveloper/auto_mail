@@ -27,7 +27,7 @@
     }
 
     //hide the access token 
-    window.history.pushState({}, document.title, "/" + "profile.html");
+    window.history.pushState({}, document.title, "/" + "profile.php");
 
     let info = JSON.parse(localStorage.getItem('authInfo'));
     console.log(info['access_token']);

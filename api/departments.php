@@ -1,5 +1,5 @@
 <?php
-$servername = 'localhost';
+$servername = '192.168.1.114';
 $username = 'sa';
 $password = '12345';
 $dbname = 'auto_mail';

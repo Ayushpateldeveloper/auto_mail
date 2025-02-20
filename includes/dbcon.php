@@ -4,10 +4,14 @@
 // $password = 'Ayupatel@$2310';
 // $dbname = 'suyog_test_db-3530313574b6';
 
-$servername = 'localhost';  // or your server name
+$servername = '192.168.1.114';  // or your server name
 $username = 'sa';
 $password = '12345';
 $dbname = 'auto_mail';
+// $servername = 'localhost';  // or your server name
+// $username = 'sa';
+// $password = '12345';
+// $dbname = 'auto_mail';
 
 // Create connection using sqlsrv
 $connectionInfo = array('UID' => $username, 'PWD' => $password, 'Database' => $dbname);
