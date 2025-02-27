@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorize Gmail</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .auth-btn { padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Authorize Gmail to Send Emails</h1>
+    <a href="#" class="auth-btn" id="authorize">Authorize Gmail</a>
+
+    <script>
+        document.getElementById('authorize').href = `https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send&access_type=offline&include_granted_scopes=true&response_type=code&state=state_parameter_passthrough_value&redirect_uri=http%3A%2F%2Flocalhost%2Foauth2callback&client_id=109168551440-t1741kigc8090155t5smmmmemb5o8crd.apps.googleusercontent.com`;
+    </script>
+</body>
+</html>

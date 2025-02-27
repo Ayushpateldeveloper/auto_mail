@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat with GPT-4</title>
+  <!-- Tailwind CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- jQuery CDN -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="container mx-auto p-4">
+    <!-- Chat Window -->
+    <div id="chat-window" class="bg-white shadow rounded p-4 mb-4 h-96 overflow-y-scroll">
+      <!-- Chat messages will be appended here -->
+    </div>
+    <!-- Chat Input Form -->
+    <form id="chat-form" class="flex">
+      <input
+        type="text"
+        id="user-input"
+        class="flex-1 border rounded p-2"
+        placeholder="Type your message..."
+        required
+      >
+      <button type="submit" class="ml-2 bg-blue-500 text-white px-4 py-2 rounded">
+        Send
+      </button>
+    </form>
+  </div>
+
+  <script>
+    $(document).ready(function(){
+      $('#chat-form').on('submit', function(e){
+        e.preventDefault();
+        var userInput = $('#user-input').val().trim();
+        if(userInput === "") return;
+
+        // Append user message to chat window
+        $('#chat-window').append(
+          `<div class="text-right mb-2">
+             <span class="bg-blue-200 px-2 py-1 rounded inline-block">${userInput}</span>
+           </div>`
+        );
+        $('#user-input').val('');
+
+        // AJAX request to the PHP backend
+        $.ajax({
+          url: 'chat.php',
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ message: userInput }),
+          success: function(response){
+            // Append GPT-4 reply to chat window
+            $('#chat-window').append(
+              `<div class="text-left mb-2">
+                 <span class="bg-green-200 px-2 py-1 rounded inline-block">${response.reply}</span>
+               </div>`
+            );
+            // Scroll chat window to the bottom
+            $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
+          },
+          error: function(){
+            alert('Error communicating with server.');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

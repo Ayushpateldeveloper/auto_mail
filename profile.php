@@ -4,11 +4,9 @@ include 'includes/header.php';
 // Fetch the latest access token from the token table
 $query = 'SELECT TOP 1 access_token FROM tokens ORDER BY id DESC';
 $result = sqlsrv_query($conn, $query);
-
 if ($result === false) {
   die('Error executing query: ' . print_r(sqlsrv_errors(), true));
 }
-
 $access_token = '';
 if ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
   $access_token = $row['access_token'];
@@ -33,11 +31,13 @@ sqlsrv_free_stmt($result);
     body {
       font-family: 'Inter', sans-serif;
     }
+
     /* Scrollable table container */
     .table-container {
       max-height: 620px;
       overflow-y: auto;
     }
+
     /* Smooth hover effect for table rows */
     tr:hover {
       background-color: #f3f4f6;
@@ -46,15 +46,10 @@ sqlsrv_free_stmt($result);
 </head>
 
 <body class="bg-gray-50">
-
-
   <!-- Filter Section -->
   <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div class="flex flex-wrap items-center gap-4">
-      <span class="text-gray-700 font-semibold">Filter by Keyword:</span>
-      <div id="keywordContainer" class="flex flex-wrap gap-3">
-        <!-- Keyword checkboxes will be loaded dynamically -->
-      </div>
+    <div id="keywordContainer" class="flex flex-wrap gap-3">
+      <!-- Keyword checkboxes will be loaded dynamically -->
     </div>
   </section>
 
@@ -71,18 +66,23 @@ sqlsrv_free_stmt($result);
     </aside>
 
     <!-- Email Display Area -->
-    <section class="flex-1 ">
-      <!-- Tabs -->
-      <div class="flex space-x-4 mb-6">
-        <button id="tab-unread" class="px-5 py-2 rounded-md shadow font-semibold bg-blue-600 text-white focus:outline-none">Unread Emails</button>
-        <button id="tab-read" class="px-5 py-2 rounded-md shadow font-semibold bg-gray-200 text-gray-800 focus:outline-none">Read Emails</button>
+    <section class="flex-1">
+      <!-- Tabs with Refresh Icon -->
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex space-x-4">
+          <button id="tab-unread" class="px-5 py-2 rounded-md shadow font-semibold bg-blue-600 text-white focus:outline-none">Unread Emails</button>
+          <button id="tab-read" class="px-5 py-2 rounded-md shadow font-semibold bg-gray-200 text-gray-800 focus:outline-none">Read Emails</button>
+        </div>
+        <button id="refreshData" class="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition">
+          <i class="fas fa-sync-alt text-gray-800"></i>
+        </button>
       </div>
 
       <!-- Unread Emails -->
       <div id="unreadContainer" class="bg-white rounded-lg shadow p-6 h-[74vh] w-[72vw]">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">Unread Emails</h2>
         <div class="table-container">
-          <table class="min-w-full divide-y divide-gray-200  ">
+          <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-100 sticky top-0 z-10">
               <tr>
                 <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">Date</th>
@@ -92,7 +92,7 @@ sqlsrv_free_stmt($result);
                 <th class="py-3 px-4 text-left text-sm font-medium text-gray-700">Snippet</th>
               </tr>
             </thead>
-            <tbody id="unreadEmailTable" class="divide-y divide-gray-100" >
+            <tbody id="unreadEmailTable" class="divide-y divide-gray-100">
               <!-- Unread emails will be inserted here -->
             </tbody>
           </table>
@@ -132,6 +132,9 @@ sqlsrv_free_stmt($result);
     let isLoading = false;
     let hasMoreEmails = true;
 
+    // Global query variable for current filters
+    let currentInboxQuery = "in:inbox -in:sent";
+
     // Helper: Format date
     function formatEmailDate(dateString) {
       const d = new Date(dateString);
@@ -152,12 +155,13 @@ sqlsrv_free_stmt($result);
       return words.length > maxWords ? words.slice(0, maxWords).join(" ") + "..." : snippet;
     }
 
-    // Retrieve access token (passed from PHP)
+    // Retrieve access token (from PHP)
     let params = {};
     params['access_token'] = '<?php echo $access_token; ?>';
     if (window.location.hash) {
       const queryString = window.location.hash.substring(1);
-      let regex = /([^&=]+)=([^&]*)/g, m;
+      let regex = /([^&=]+)=([^&]*)/g,
+        m;
       while (m = regex.exec(queryString)) {
         params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
       }
@@ -167,7 +171,9 @@ sqlsrv_free_stmt($result);
       $.ajax({
         url: 'store_token.php',
         type: 'POST',
-        data: { access_token: JSON.stringify(params) },
+        data: {
+          access_token: JSON.stringify(params)
+        },
         success: function(response) {
           console.log(response);
         },
@@ -176,11 +182,9 @@ sqlsrv_free_stmt($result);
         }
       });
     }
-
     const isLocalhost = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
     const basePath = isLocalhost ? "/" : "/auto_mail/";
     window.history.pushState({}, document.title, window.location.pathname);
-
     let authInfo = JSON.parse(localStorage.getItem('authInfo'));
     if (!authInfo || !authInfo['access_token']) {
       alert("Access token missing. Please sign in.");
@@ -188,30 +192,44 @@ sqlsrv_free_stmt($result);
     }
     const accessToken = authInfo['access_token'];
 
-    // Fetch email details
+    // Fetch email details from Gmail API
     function fetchEmailDetails(messageId) {
       return fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`, {
-        headers: { "Authorization": `Bearer ${accessToken}` }
-      })
-      .then(response => {
-        if (!response.ok) throw new Error("Error fetching email details: " + response.status);
-        return response.json();
-      })
-      .then(emailData => {
-        let headers = emailData.payload.headers;
-        let emailDate = "", emailFrom = "", emailTo = "", emailSubject = "";
-        headers.forEach(header => {
-          if (header.name === "Date") emailDate = header.value;
-          if (header.name === "From") emailFrom = header.value;
-          if (header.name === "To") emailTo = header.value;
-          if (header.name === "Subject") emailSubject = header.value;
+          headers: {
+            "Authorization": `Bearer ${accessToken}`
+          }
+        })
+        .then(response => {
+          if (!response.ok) throw new Error("Error fetching email details: " + response.status);
+          return response.json();
+        })
+        .then(emailData => {
+          let headers = emailData.payload.headers;
+          let emailDate = "",
+            emailFrom = "",
+            emailTo = "",
+            emailSubject = "";
+          headers.forEach(header => {
+            if (header.name === "Date") emailDate = header.value;
+            if (header.name === "From") emailFrom = header.value;
+            if (header.name === "To") emailTo = header.value;
+            if (header.name === "Subject") emailSubject = header.value;
+          });
+          const internalDate = Number(emailData.internalDate);
+          let snippet = emailData.snippet || "";
+          snippet = truncateSnippet(snippet);
+          const isUnread = emailData.labelIds && emailData.labelIds.includes("UNREAD");
+          return {
+            messageId,
+            emailDate,
+            emailFrom,
+            emailTo,
+            emailSubject,
+            snippet,
+            internalDate,
+            isUnread
+          };
         });
-        const internalDate = Number(emailData.internalDate);
-        let snippet = emailData.snippet || "";
-        snippet = truncateSnippet(snippet);
-        const isUnread = emailData.labelIds && emailData.labelIds.includes("UNREAD");
-        return { messageId, emailDate, emailFrom, emailTo, emailSubject, snippet, internalDate, isUnread };
-      });
     }
 
     // Fetch emails by query
@@ -219,13 +237,24 @@ sqlsrv_free_stmt($result);
       if (isLoading) return;
       isLoading = true;
       try {
-        let url = "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20";
+        let url = "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50";
         if (query) url += `&q=${encodeURIComponent(query)}`;
         if (pageToken) url += `&pageToken=${pageToken}`;
-        const response = await fetch(url, { headers: { "Authorization": `Bearer ${accessToken}` } });
+        const response = await fetch(url, {
+          headers: {
+            "Authorization": `Bearer ${accessToken}`
+          }
+        });
         if (!response.ok) throw new Error("Error fetching emails: " + response.status);
         const data = await response.json();
-        if (!data.messages) throw new Error("No messages in response.");
+        if (!data.messages) {
+          allEmailsGlobal = [];
+          unreadEmailsGlobal = [];
+          readEmailsGlobal = [];
+          hasMoreEmails = false;
+          applyFilters();
+          return;
+        }
         nextPageToken = data.nextPageToken;
         hasMoreEmails = !!nextPageToken;
         const emailPromises = data.messages.map(message => fetchEmailDetails(message.id));
@@ -241,7 +270,7 @@ sqlsrv_free_stmt($result);
         applyFilters();
       } catch (error) {
         console.error('Error fetching emails by query:', error);
-        alert("Error fetching emails: " + error.message);
+        renderNoEmailsMessage();
       } finally {
         isLoading = false;
       }
@@ -252,12 +281,20 @@ sqlsrv_free_stmt($result);
       await fetchEmailsByQuery("", pageToken);
     }
 
-    // Render emails
+    // Render emails in the table.
     function renderEmails(emails, containerId) {
       const tbody = document.getElementById(containerId);
-      // Keep a sentinel element for infinite scroll
-      const sentinel = tbody.lastElementChild;
       tbody.innerHTML = '';
+      if (emails.length === 0) {
+        let selectedKeywords = Array.from(document.querySelectorAll('#keywordContainer input:checked')).map(cb => cb.value);
+        let message = selectedKeywords.length > 0 ?
+          "No mail found for keyword: " + selectedKeywords.join(", ") :
+          "No emails found.";
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="5" class="py-4 text-center text-gray-700">${message}</td>`;
+        tbody.appendChild(row);
+        return;
+      }
       emails.sort((a, b) => b.internalDate - a.internalDate).forEach(email => {
         const row = document.createElement('tr');
         row.className = 'cursor-pointer';
@@ -271,22 +308,12 @@ sqlsrv_free_stmt($result);
         `;
         tbody.appendChild(row);
       });
-      tbody.appendChild(sentinel);
-      if (hasMoreEmails) {
-        const loadingRow = document.createElement('tr');
-        loadingRow.innerHTML = `
-          <td colspan="5" class="py-4 text-center ${isLoading ? '' : 'hidden'}">
-            <div class="inline-flex items-center">
-              <svg class="animate-spin h-5 w-5 mr-3 text-blue-500" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Loading more emails...
-            </div>
-          </td>
-        `;
-        tbody.insertBefore(loadingRow, sentinel);
-      }
+    }
+
+    // Function to render a "no emails found" message in both tables.
+    function renderNoEmailsMessage() {
+      renderEmails([], 'unreadEmailTable');
+      renderEmails([], 'readEmailTable');
     }
 
     // Infinite Scroll Setup
@@ -306,28 +333,29 @@ sqlsrv_free_stmt($result);
         });
       };
       const observer = new IntersectionObserver(callback, options);
-      // Create and append sentinels if they don't already exist
-      const unreadSentinel = document.createElement('tr');
-      unreadSentinel.id = 'unread-sentinel';
-      unreadSentinel.innerHTML = '<td colspan="5" class="py-4"></td>';
       if (!document.getElementById('unread-sentinel')) {
+        const unreadSentinel = document.createElement('tr');
+        unreadSentinel.id = 'unread-sentinel';
+        unreadSentinel.innerHTML = '<td colspan="5" class="py-4"></td>';
         document.getElementById('unreadEmailTable').appendChild(unreadSentinel);
       }
-      const readSentinel = document.createElement('tr');
-      readSentinel.id = 'read-sentinel';
-      readSentinel.innerHTML = '<td colspan="5" class="py-4"></td>';
       if (!document.getElementById('read-sentinel')) {
+        const readSentinel = document.createElement('tr');
+        readSentinel.id = 'read-sentinel';
+        readSentinel.innerHTML = '<td colspan="5" class="py-4"></td>';
         document.getElementById('readEmailTable').appendChild(readSentinel);
       }
-      observer.observe(unreadSentinel);
-      observer.observe(readSentinel);
+      observer.observe(document.getElementById('unread-sentinel'));
+      observer.observe(document.getElementById('read-sentinel'));
     }
 
     // Department functions
     async function loadDepartments() {
       try {
         const response = await fetch('/auto_mail/api/departments.php', {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
         });
         const departments = await response.json();
         const departmentList = document.getElementById('departmentList');
@@ -359,7 +387,9 @@ sqlsrv_free_stmt($result);
     async function loadKeywords(deptId) {
       try {
         const response = await fetch(`/auto_mail/api/keywords.php?departmentId=${deptId}`, {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
         });
         if (!response.ok) throw new Error("Error fetching keywords: " + response.status);
         const keywords = await response.json();
@@ -371,6 +401,7 @@ sqlsrv_free_stmt($result);
       }
     }
 
+    // Updated displayKeywords to select all by default.
     function displayKeywords(keywords) {
       const keywordContainer = document.getElementById('keywordContainer');
       keywordContainer.innerHTML = "";
@@ -379,22 +410,27 @@ sqlsrv_free_stmt($result);
         const label = document.createElement('label');
         label.className = "inline-flex items-center mr-4";
         label.innerHTML = `
-          <input type="checkbox" class="keyword-filter" value="${keyword}" onchange="applyKeywordFilter()" />
+          <input type="checkbox" class="keyword-filter" value="${keyword}" checked onchange="applyKeywordFilter()" />
           <span class="ml-2 text-gray-700">${keyword}</span>
         `;
         keywordContainer.appendChild(label);
       });
     }
 
+    // When keywords change, update global query and re-fetch emails.
     function applyKeywordFilter() {
       const selectedKeywords = Array.from(document.querySelectorAll('#keywordContainer input:checked')).map(cb => cb.value);
       let query = selectedKeywords.length > 0 ? selectedKeywords.map(kw => `"${kw}"`).join(" OR ") : "";
       allEmailsGlobal = [];
       unreadEmailsGlobal = [];
       readEmailsGlobal = [];
-      fetchEmailsByQuery(query);
+      currentInboxQuery = query ? `in:inbox -in:sent (${query})` : "in:inbox -in:sent";
+      console.log('Current Inbox Query:', currentInboxQuery);
+      console.log('Selected Keywords:', selectedKeywords);
+      fetchEmailsByQuery(currentInboxQuery);
     }
 
+    // When a department is selected, re-fetch keywords and emails.
     function selectDepartment(deptId) {
       currentDepartment = deptId;
       loadDepartments();
@@ -409,14 +445,14 @@ sqlsrv_free_stmt($result);
       }
     }
 
-    // Apply filters
+    // Render emails in both unread and read tabs.
     function applyFilters() {
       renderEmails(unreadEmailsGlobal, 'unreadEmailTable');
       renderEmails(readEmailsGlobal, 'readEmailTable');
     }
 
-    // Tab Switching
-    document.getElementById('tab-unread').addEventListener('click', function () {
+    // Tab switching.
+    document.getElementById('tab-unread').addEventListener('click', function() {
       this.classList.replace('bg-gray-200', 'bg-blue-600');
       this.classList.replace('text-gray-800', 'text-white');
       document.getElementById('tab-read').classList.replace('bg-blue-600', 'bg-gray-200');
@@ -425,7 +461,7 @@ sqlsrv_free_stmt($result);
       document.getElementById('readContainer').classList.add('hidden');
     });
 
-    document.getElementById('tab-read').addEventListener('click', function () {
+    document.getElementById('tab-read').addEventListener('click', function() {
       this.classList.replace('bg-gray-200', 'bg-blue-600');
       this.classList.replace('text-gray-800', 'text-white');
       document.getElementById('tab-unread').classList.replace('bg-blue-600', 'bg-gray-200');
@@ -434,20 +470,30 @@ sqlsrv_free_stmt($result);
       document.getElementById('unreadContainer').classList.add('hidden');
     });
 
-    // Logout function
-    function logout() {
-      fetch("https://oauth2.googleapis.com/revoke?token=" + accessToken, {
-        method: 'POST',
-        headers: { 'Content-type': 'application/x-www-form-urlencoded' }
-      })
-      .then(() => {
-        localStorage.removeItem('authInfo');
-        window.location.href = "/auto_mail/index.html";
-      })
-      .catch(err => console.error("Error during logout:", err));
+    // Refresh data function
+    function refreshData() {
+      applyKeywordFilter();
     }
 
-    // Initialize on DOM load
+    // Bind refresh button event
+    document.getElementById('refreshData').addEventListener('click', refreshData);
+
+    // Logout function.
+    function logout() {
+      fetch("https://oauth2.googleapis.com/revoke?token=" + accessToken, {
+          method: 'POST',
+          headers: {
+            'Content-type': 'application/x-www-form-urlencoded'
+          }
+        })
+        .then(() => {
+          localStorage.removeItem('authInfo');
+          window.location.href = "/auto_mail/index.html";
+        })
+        .catch(err => console.error("Error during logout:", err));
+    }
+
+    // Initialize on DOM load.
     document.addEventListener('DOMContentLoaded', () => {
       loadDepartments();
       fetchEmails();
@@ -455,4 +501,6 @@ sqlsrv_free_stmt($result);
     });
   </script>
 </body>
+
 </html>
+<?php sqlsrv_close($conn); ?>

@@ -1,71 +1,237 @@
-<?php include 'includes/header.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>View Email</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+    rel="stylesheet"
+  />
+
+  <!-- Google Fonts: Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Font Awesome (with valid SRI) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Inline styles to set global font-family to Poppins -->
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+  </style>
 </head>
-<body class="bg-gray-50">
-  <div class="min-h-screen">
-    <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 shadow">
-      <div class="container mx-auto px-4 flex justify-between items-center">
-        <h1 class="text-2xl font-bold">Email View</h1>
-        <a href="/auto_mail/profile.php" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded transition-colors">
-          Back to Inbox
-        </a>
-      </div>
-    </header>
 
-    <main class="container mx-auto px-4 py-8">
-      <div class="bg-white rounded-lg shadow-lg p-6">
-        <h2 id="subject" class="text-2xl font-bold text-gray-800 mb-4"></h2>
-        <p><strong>From:</strong> <span id="from"></span></p>
-        <p><strong>To:</strong> <span id="to"></span></p>
-        <p><strong>Date:</strong> <span id="date"></span></p>
-        <hr class="my-4" />
-        <div id="emailBody" class="prose max-w-none"></div>
-        <h3 class="text-lg font-semibold mt-6">Attachments</h3>
-        <div id="attachments" class="mt-2"></div>
-      </div>
-    </main>
-  </div>
+<body class="bg-gray-50 min-h-screen">
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 shadow">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Email View</h1>
+      <a href="/auto_mail/profile.php" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded transition-colors">
+        Back to Inbox
+      </a>
+    </div>
+  </header>
 
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-lg p-6">
+      <!-- Email Meta -->
+      <h2 id="subject" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+      <p><strong>From:</strong> <span id="from"></span></p>
+      <p><strong>To:</strong> <span id="to"></span></p>
+      <p><strong>Date:</strong> <span id="date"></span></p>
+      <hr class="my-4" />
+
+      <!-- Email Body (increased text size) -->
+      <div id="emailBody" class="prose max-w-none text-lg leading-relaxed"></div>
+
+      <!-- Attachments Section -->
+      <h3 class="text-lg font-semibold mt-6">Attachments</h3>
+      <!-- We'll render attachment cards here -->
+      <div id="attachments" class="flex flex-wrap gap-4 mt-4"></div>
+    </div>
+  </main>
+
+  <!-- Script -->
   <script>
-    // Extract messageId from the URL query string (use "msgid" as key)
+    // 1) Get the "msgid" parameter from the URL.
     const urlParams = new URLSearchParams(window.location.search);
     const messageId = urlParams.get('msgid');
 
-    // Retrieve stored auth info (make sure you've logged in and saved it in localStorage)
+    // 2) Retrieve stored auth info from localStorage.
     const authInfo = JSON.parse(localStorage.getItem('authInfo'));
 
+    // 3) Basic checks
     if (!authInfo || !authInfo.access_token) {
       alert('Please log in first');
       window.location.href = '/auto_mail/index.html';
     } else if (!messageId) {
       alert('No message selected');
     } else {
-      // Fetch email details from the API
+      // 4) Fetch email details
       fetch(`/auto_mail/api/view_email.php?messageId=${messageId}`, {
         headers: { 'Authorization': `Bearer ${authInfo.access_token}` }
       })
-      .then(response => response.json())
-      .then(email => {
-        document.getElementById('subject').textContent = email.subject;
-        document.getElementById('from').textContent = email.from;
-        document.getElementById('to').textContent = email.to;
-        document.getElementById('date').textContent = new Date(email.date).toLocaleString();
-        document.getElementById('emailBody').innerHTML = email.body;
-        
-        // Log whether the email status was updated to "read"
-        if (email.statusChanged) {
-          console.log("Email marked as read successfully.");
-        } else {
-          console.log("Email status was not updated.");
-        }
-      })
-      .catch(error => console.error('Error:', error));
+        .then(response => response.json())
+        .then(email => {
+          // Extract fields
+          const subject = email.subject || "";
+          const from = email.from || "";
+          const to = email.to || "";
+          const date = email.date || "";
+          let bodyContent = email.body || "";
+          const attachmentsArray = email.attachments || [];
+
+          // Populate DOM
+          document.getElementById('subject').textContent = subject;
+          document.getElementById('from').textContent = from;
+          document.getElementById('to').textContent = to;
+          document.getElementById('date').textContent = date
+            ? new Date(date).toLocaleString()
+            : "";
+
+          // Remove repeated plain-text portion (if any)
+          const firstDivIndex = bodyContent.indexOf("<div");
+          if (firstDivIndex !== -1) {
+            bodyContent = bodyContent.substring(firstDivIndex);
+          }
+          document.getElementById('emailBody').innerHTML = bodyContent;
+
+          // ---- Make any links in the body appear blue & open in new tab
+          document.querySelectorAll('#emailBody a').forEach(link => {
+            link.classList.add('text-blue-600', 'hover:underline');
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+          });
+
+          // Inline CID Images
+          const inlineImageAttachments = attachmentsArray.filter(a =>
+            a.mimeType.startsWith('image/')
+          );
+          if (inlineImageAttachments.length > 0) {
+            const inlineImg = inlineImageAttachments[0];
+            const inlineImgURL = `/auto_mail/api/get_attachment.php?messageId=${email.id}&attachmentId=${inlineImg.id}&mimeType=${encodeURIComponent(inlineImg.mimeType)}&filename=${encodeURIComponent(inlineImg.filename)}`;
+            document.querySelectorAll('#emailBody img').forEach(img => {
+              const src = img.getAttribute('src');
+              if (src && src.startsWith('cid:')) {
+                img.src = inlineImgURL;
+              }
+            });
+          } else {
+            // Hide broken inline images if no inline attachments
+            document.querySelectorAll('#emailBody img').forEach(img => {
+              const src = img.getAttribute('src');
+              if (src && src.startsWith('cid:')) {
+                img.style.display = 'none';
+              }
+            });
+          }
+
+          // -------------------
+          // Render Attachments
+          // -------------------
+          const attachmentsDiv = document.getElementById('attachments');
+
+          // Helper: get file extension
+          function getFileExtension(filename) {
+            const parts = filename.split('.');
+            return parts.length > 1 ? parts[parts.length - 1] : '';
+          }
+
+          // Helper: map extension -> Font Awesome icon
+          function getIconHtmlByExtension(ext) {
+            switch (ext.toLowerCase()) {
+              case 'pdf':
+                return '<i class="fas fa-file-pdf text-red-500"></i>';
+              case 'doc':
+              case 'docx':
+                return '<i class="fas fa-file-word text-blue-500"></i>';
+              case 'xls':
+              case 'xlsx':
+                return '<i class="fas fa-file-excel text-green-500"></i>';
+              case 'ppt':
+              case 'pptx':
+                return '<i class="fas fa-file-powerpoint text-orange-500"></i>';
+              case 'txt':
+                return '<i class="fas fa-file-alt text-gray-500"></i>';
+              case 'sql':
+              case 'js':
+              case 'css':
+              case 'html':
+                return '<i class="fas fa-file-code text-purple-500"></i>';
+              case 'jpg':
+              case 'jpeg':
+              case 'png':
+              case 'gif':
+                return '<i class="fas fa-file-image text-indigo-500"></i>';
+              default:
+                return '<i class="fas fa-file text-gray-500"></i>';
+            }
+          }
+
+          attachmentsArray.forEach(attachment => {
+            // Build URL for the actual file
+            const attachmentURL = `/auto_mail/api/get_attachment.php?messageId=${email.id}&attachmentId=${attachment.id}&mimeType=${encodeURIComponent(attachment.mimeType)}&filename=${encodeURIComponent(attachment.filename)}`;
+            const extension = getFileExtension(attachment.filename);
+
+            // Create a link wrapping the entire "card"
+            const cardLink = document.createElement('a');
+            cardLink.href = attachmentURL;
+            cardLink.setAttribute("download", attachment.filename);
+            // Tailwind classes for a small, modern card
+            cardLink.className = `
+              group
+              block
+              w-20
+              h-22
+              flex
+              flex-col
+              items-center
+              justify-center
+              p-3
+              border
+              border-gray-200
+              rounded-lg
+              shadow
+              hover:shadow-md
+              hover:bg-gray-50
+              transition
+              cursor-pointer
+            `;
+
+            // Icon
+            const iconWrapper = document.createElement('div');
+            iconWrapper.innerHTML = getIconHtmlByExtension(extension);
+            iconWrapper.className = "text-3xl mb-2 group-hover:text-gray-700";
+
+            // Filename
+            const fileNameEl = document.createElement('p');
+            fileNameEl.textContent = attachment.filename;
+            fileNameEl.className = "text-xs text-center text-gray-700 truncate w-full group-hover:text-gray-900";
+
+            // Append to card
+            cardLink.appendChild(iconWrapper);
+            cardLink.appendChild(fileNameEl);
+
+            // Finally, add to attachments container
+            attachmentsDiv.appendChild(cardLink);
+          });
+        })
+        .catch(error => console.error('Error:', error));
     }
   </script>
 </body>

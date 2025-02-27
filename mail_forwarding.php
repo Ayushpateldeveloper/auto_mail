@@ -1,7 +1,7 @@
 <?php
 require_once 'includes/dbcon.php';
 
-// Fetch the latest access token from the token table
+// Fetch the latest access token from the token table (if needed)
 $query = 'SELECT TOP 1 access_token FROM tokens ORDER BY id DESC';
 $result = sqlsrv_query($conn, $query);
 if ($result === false) {
@@ -9,7 +9,6 @@ if ($result === false) {
 }
 $access_token = '';
 if ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
-  // Try to decode as JSON; if that fails, use the raw value.
   $tokenData = json_decode($row['access_token'], true);
   $access_token = ($tokenData && isset($tokenData['access_token'])) ? $tokenData['access_token'] : $row['access_token'];
 }
@@ -21,16 +20,13 @@ sqlsrv_free_stmt($result);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Auto Mail - Email Forwarding System</title>
-  <!-- In production, compile Tailwind CSS locally instead of using the CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
     body { font-family: 'Poppins', sans-serif; }
-    /* Department scroll area */
     .dept-scroll {
       overflow-x: auto;
       white-space: nowrap;
@@ -39,13 +35,10 @@ sqlsrv_free_stmt($result);
     .dept-scroll::-webkit-scrollbar { height: 6px; }
     .dept-scroll::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 6px; }
     .dept-scroll::-webkit-scrollbar-track { background-color: #f1f5f9; }
-    
     .email-row { transition: all 0.2s ease-in-out; }
     .email-row:hover { background-color: #f8fafc; transform: translateX(4px); }
     .keyword-tag { transition: all 0.2s ease; }
     .keyword-tag:hover { transform: scale(1.05); }
-    
-    /* Table container with custom scrollbar and no horizontal scroll */
     .table-container {
       max-height: 620px;
       overflow-y: auto;
@@ -63,8 +56,6 @@ sqlsrv_free_stmt($result);
       background-color: #94a3b8;
       border-radius: 4px;
     }
-    
-    /* Spinner inside table row */
     .spinner {
       border: 4px solid rgba(0, 0, 0, 0.1);
       border-top-color: #4f46e5;
@@ -75,23 +66,20 @@ sqlsrv_free_stmt($result);
       display: inline-block;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    
-    /* Modal: Ensure it appears above table headers */
+    /* Modal should appear on top */
     #forwardModal { z-index: 10000; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
   <?php include 'includes/header.php'; ?>
 
-  <!-- Department Selection -->
+  <!-- Department Selection (unchanged) -->
   <div class="dept-scroll bg-white shadow-md p-4 flex space-x-4">
-    <!-- "All Departments" tab -->
     <button 
       class="dept-btn inline-block px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors shadow-sm cursor-pointer"
       onclick="selectDepartment('all', 'All Departments')"
     >All Departments</button>
     <?php
-    // Fetch departments
     $sql = 'SELECT id, name FROM departments ORDER BY name';
     $stmt = sqlsrv_query($conn, $sql);
     if ($stmt === false) {
@@ -108,15 +96,11 @@ sqlsrv_free_stmt($result);
 
   <!-- Main Content Area -->
   <main class="flex-1 p-6 bg-gray-50">
-    <!-- Keywords Section -->
     <div id="keywordSection" class="mb-6 bg-white rounded-xl shadow-md p-6">
       <h2 class="text-xl font-semibold text-gray-800 mb-4">Keywords Filter</h2>
-      <div id="keywordContainer" class="flex flex-wrap gap-3">
-        <!-- Keywords loaded dynamically -->
-      </div>
+      <div id="keywordContainer" class="flex flex-wrap gap-3"></div>
     </div>
 
-    <!-- Email List Section -->
     <div class="bg-white rounded-xl shadow-md p-6 relative">
       <div class="flex items-center justify-between mb-6">
         <div>
@@ -156,7 +140,7 @@ sqlsrv_free_stmt($result);
             </tr>
           </thead>
           <tbody id="unreadEmailTable" class="divide-y divide-gray-100">
-            <!-- Unread emails and loading row will be loaded here -->
+            <!-- Emails loaded dynamically -->
           </tbody>
         </table>
       </div>
@@ -175,7 +159,7 @@ sqlsrv_free_stmt($result);
             </tr>
           </thead>
           <tbody id="readEmailTable" class="divide-y divide-gray-100">
-            <!-- Read emails and loading row will be loaded here -->
+            <!-- Emails loaded dynamically -->
           </tbody>
         </table>
       </div>
@@ -188,7 +172,7 @@ sqlsrv_free_stmt($result);
       <div id="modalInitial">
         <h3 class="text-xl font-semibold text-gray-900 mb-4">Forward Selected Emails</h3>
         <div class="space-y-4">
-          <button class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors" onclick="showSelectUserField()">
+          <button class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors" onclick="showManualEmailInput()">
             Forward to Specific User
           </button>
           <button class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors" onclick="forwardToAllUsers()">
@@ -199,18 +183,12 @@ sqlsrv_free_stmt($result);
           Cancel
         </button>
       </div>
-      <!-- New select user field (hidden initially) -->
-      <div id="selectUserField" class="hidden">
-        <h3 class="text-xl font-semibold text-gray-900 mb-4">Select a User</h3>
-        <select id="userSelect" class="w-full border border-gray-300 rounded px-3 py-2 mb-4">
-          <option value="">Select a user...</option>
-          <option value="user1">User 1</option>
-          <option value="user2">User 2</option>
-          <option value="user3">User 3</option>
-          <!-- Add additional user options as needed -->
-        </select>
+      <!-- Manual email input field (hidden initially) -->
+      <div id="manualEmailField" class="hidden">
+        <h3 class="text-xl font-semibold text-gray-900 mb-4">Enter Recipient Email</h3>
+        <input type="email" id="manualEmailInput" class="w-full border border-gray-300 rounded px-3 py-2 mb-4" placeholder="Enter email address" required>
         <button class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors" onclick="submitForwardToUser()">
-          Forward to Selected User
+          Forward to Entered Email
         </button>
         <button class="mt-4 w-full border border-gray-300 px-4 py-2 rounded text-gray-700 hover:bg-gray-50 transition-colors" onclick="closeModal()">
           Cancel
@@ -227,7 +205,6 @@ sqlsrv_free_stmt($result);
       let hasMoreEmails = true;
       let currentTab = 'unread';
 
-      // Create a loading row for table bodies.
       function createLoadingRow(text) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
@@ -256,13 +233,11 @@ sqlsrv_free_stmt($result);
         return year === nowYear ? `${day} ${month} ${hour}:${minute}` : `${day} ${month} ${year} ${hour}:${minute}`;
       }
 
-      // Return an array of selected keywords
       function getSelectedKeywords() {
         return Array.from(document.querySelectorAll('#keywordContainer input[type="checkbox"]:checked'))
                     .map(cb => cb.value);
       }
 
-      // Load keywords for a department using an AJAX call; for "all", clear keywords.
       function loadKeywords(deptId) {
         if(deptId === 'all'){
           document.getElementById('keywordContainer').innerHTML = '';
@@ -298,7 +273,6 @@ sqlsrv_free_stmt($result);
         }
       }
 
-      // Load emails for a department (calls the API endpoint), including keywords if applicable.
       function loadEmails(deptId, pageToken = null) {
         if (isLoading) return;
         isLoading = true;
@@ -316,8 +290,6 @@ sqlsrv_free_stmt($result);
 
         const tableId = currentTab === 'read' ? 'readEmailTable' : 'unreadEmailTable';
         const tableBody = document.getElementById(tableId);
-
-        // Create and insert a loading row.
         let loadingText = pageToken ? "Loading More Emails..." : "Loading Emails...";
         const loadingRow = createLoadingRow(loadingText);
         if(pageToken){
@@ -367,7 +339,6 @@ sqlsrv_free_stmt($result);
           });
       }
 
-      // Reload emails (for example, when keywords change)
       function reloadEmails(){
         nextPageToken = null;
         hasMoreEmails = true;
@@ -376,7 +347,6 @@ sqlsrv_free_stmt($result);
         }
       }
 
-      // Department selection
       function selectDepartment(deptId, deptName) {
         currentDepartment = deptId;
         document.getElementById('currentDept').textContent = deptName;
@@ -401,7 +371,6 @@ sqlsrv_free_stmt($result);
         });
       }
 
-      // Tab switching
       document.getElementById('tab-unread').addEventListener('click', function() {
         this.classList.add('bg-blue-600', 'text-white');
         this.classList.remove('bg-gray-200', 'text-gray-800');
@@ -425,7 +394,6 @@ sqlsrv_free_stmt($result);
         if (currentDepartment) { loadEmails(currentDepartment); }
       });
 
-      // Infinite scroll within the table container
       function handleScroll(e) {
         const container = e.target;
         if (container.scrollHeight - container.scrollTop <= container.clientHeight + 100 && hasMoreEmails && !isLoading && currentDepartment) {
@@ -440,19 +408,21 @@ sqlsrv_free_stmt($result);
       function openModal() { 
         document.getElementById('forwardModal').classList.remove('hidden'); 
         document.getElementById('modalInitial').style.display = 'block';
-        document.getElementById('selectUserField').classList.add('hidden');
+        document.getElementById('manualEmailField').classList.add('hidden');
       }
       function closeModal() { 
         document.getElementById('forwardModal').classList.add('hidden'); 
       }
-      function showSelectUserField() {
+      // Show the manual email input field for "Forward to Specific User"
+      function showManualEmailInput() {
         document.getElementById('modalInitial').style.display = 'none';
-        document.getElementById('selectUserField').classList.remove('hidden');
+        document.getElementById('manualEmailField').classList.remove('hidden');
       }
+      // Submit function to forward selected emails to the manually entered address
       function submitForwardToUser() {
-        const selectedUser = document.getElementById('userSelect').value;
-        if (!selectedUser) {
-          alert('Please select a user.');
+        const manualEmail = document.getElementById('manualEmailInput').value.trim();
+        if (!manualEmail) {
+          alert('Please enter an email address.');
           return;
         }
         const selectedEmails = getSelectedEmails();
@@ -460,9 +430,24 @@ sqlsrv_free_stmt($result);
           alert('Please select at least one email to forward');
           return;
         }
-        alert(`Forwarding ${selectedEmails.length} email(s) to ${selectedUser}...`);
-        closeModal();
+        // Send the selected emails and recipient email to api/forward_mail.php via AJAX.
+        $.ajax({
+          url: 'api/forward_email.php',
+          method: 'POST',
+          data: {
+            recipient: manualEmail,
+            emails: selectedEmails
+          },
+          success: function(response) {
+            alert('Forwarding completed:\n' + response);
+            closeModal();
+          },
+          error: function(xhr, status, error) {
+            alert('An error occurred while forwarding: ' + error);
+          }
+        });
       }
+      // Forward to all users (unchanged)
       function forwardToAllUsers() {
         const selectedEmails = getSelectedEmails();
         if (selectedEmails.length === 0) {
@@ -477,21 +462,16 @@ sqlsrv_free_stmt($result);
         return Array.from(document.querySelectorAll(`#${tableId} input[type="checkbox"]:checked`))
                .map(cb => cb.value);
       }
-
-      // Expose functions to global scope for inline onclick handlers.
       window.selectDepartment = selectDepartment;
       window.reloadEmails = reloadEmails;
       window.openModal = openModal;
       window.closeModal = closeModal;
-      window.showSelectUserField = showSelectUserField;
+      window.showManualEmailInput = showManualEmailInput;
       window.submitForwardToUser = submitForwardToUser;
       window.forwardToAllUsers = forwardToAllUsers;
-
-      // Auto-select "All Departments" on load
       selectDepartment('all', "All Departments");
     });
-
-    // Make the access token available to JS
+    
     const accessToken = '<?php echo $access_token; ?>';
     if (!accessToken) {
       alert('Access token not found. Please sign in again.');
